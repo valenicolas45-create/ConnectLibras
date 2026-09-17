@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://valenicolas45-create.github.io/ConnectLibras/sitemap.xml
