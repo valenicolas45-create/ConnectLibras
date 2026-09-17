@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ConnectLibras — Tecnologia e Acessibilidade</title>
+<meta name="description" content="ConnectLibras: tecnologia assistiva para inclusão, comunicação e aprendizado de Línguas de Sinais. Protótipo com Libras e KSL, sem uso de hardware.">
+<meta name="keywords" content="ConnectLibras, Libras, Língua de Sinais, acessibilidade, tecnologia assistiva, KSL">
+<meta name="robots" content="index, follow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#080b10">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --bg:#080b10;
+  --bg-soft:#0b0f16;
+  --panel:#10141c;
+  --panel-2:#131824;
+  --panel-raised:#161c28;
+  --border:rgba(255,255,255,0.06);
+  --border-strong:rgba(255,255,255,0.12);
+  --text-1:#eef1f7;
+  --text-2:#9aa3b5;
+  --text-3:#5b6478;
+  --accent:#3d8bff;
+  --accent-2:#6aa9ff;
+  --accent-dim:#20406e;
+  --accent-glow:rgba(61,139,255,.35);
+  --accent-soft:rgba(61,139,255,.10);
+  --success:#34d399;
+  --warn:#f5b955;
+  --radius-lg:22px;
+  --radius-md:16px;
+  --radius-sm:10px;
+  --font-display:'Manrope',sans-serif;
+  --font-body:'Inter',sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+  --fs-scale:1;
+  --shadow-panel: 0 1px 0 rgba(255,255,255,.03) inset, 0 20px 50px -25px rgba(0,0,0,.7);
+  --dur:1;
+}
+[data-theme="light"]{
+  --bg:#f3f4f7;
+  --bg-soft:#eceef2;
+  --panel:#ffffff;
+  --panel-2:#f7f8fa;
+  --panel-raised:#ffffff;
+  --border:rgba(10,14,20,0.08);
+  --border-strong:rgba(10,14,20,0.14);
+  --text-1:#12151c;
+  --text-2:#565f70;
+  --text-3:#8890a0;
+  --accent:#2f6fe0;
+  --accent-2:#1e56bd;
+  --accent-soft:rgba(47,111,224,.08);
+  --shadow-panel: 0 1px 0 rgba(255,255,255,.6) inset, 0 20px 50px -30px rgba(20,30,50,.25);
+}
+[data-contrast="high"]{
+  --border:rgba(255,255,255,0.22);
+  --border-strong:rgba(255,255,255,0.4);
+  --text-2:#c7cddb;
+}
+[data-theme="light"][data-contrast="high"]{
+  --border:rgba(10,14,20,0.25);
+  --text-2:#33394a;
+}
+[data-motion="reduced"] *{animation-duration:.001s !important; transition-duration:.001s !important;}
+
+*{box-sizing:border-box;}
+html,body{width:100%;margin:0;padding:0;overflow-x:hidden;max-width:100vw;}
+html{min-height:100%;min-height:100vh;min-height:100dvh;}
+body{
+  background:
+    radial-gradient(1100px 560px at 82% -8%, rgba(61,139,255,.10), transparent 60%),
+    radial-gradient(800px 500px at -5% 15%, rgba(61,139,255,.05), transparent 55%),
+    var(--bg);
+  color:var(--text-1);
+  font-family:var(--font-body);
+  font-size:calc(15px * var(--fs-scale));
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  min-height:100%;
+  min-height:100vh;
+  min-height:100dvh;
+  padding-left:env(safe-area-inset-left);
+  padding-right:env(safe-area-inset-right);
+}
+h1,h2,h3,h4{font-family:var(--font-display);margin:0;letter-spacing:-.02em;}
+p{margin:0;}
+a{color:inherit;text-decoration:none;}
+button{font-family:var(--font-body);cursor:pointer;}
+button, a, input, textarea, select{-webkit-tap-highlight-color:transparent;}
+button, .nav-item, .lang-btn, .tab, a.btn{touch-action:manipulation;}
+::selection{background:var(--accent-soft);color:var(--text-1);}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px;}
+
+.eyebrow{
+  font-family:var(--font-mono);
+  font-size:calc(11px * var(--fs-scale));
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--text-3);
+}
+
+/* ============ LAYOUT ============ */
+.app{display:grid;grid-template-columns:248px 1fr;min-height:100vh;min-height:100dvh;}
+.sidebar{
+  border-right:1px solid var(--border);
+  background:var(--bg-soft);
+  padding:22px 16px;
+  padding-top:calc(22px + env(safe-area-inset-top));
+  padding-left:calc(16px + env(safe-area-inset-left));
+  padding-bottom:calc(22px + env(safe-area-inset-bottom));
+  display:flex;flex-direction:column;
+  position:sticky;top:0;
+  height:100vh;height:100dvh;
+}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 22px 8px;}
+.brand-mark{
+  width:30px;height:30px;border-radius:9px;
+  background:linear-gradient(155deg,var(--accent),#1c3f7a);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 0 1px var(--border-strong), 0 6px 18px -6px var(--accent-glow);
+  flex-shrink:0;
+}
+.brand-mark svg{width:16px;height:16px;}
+.brand-name{font-family:var(--font-display);font-weight:800;font-size:calc(15.5px * var(--fs-scale));letter-spacing:-.01em;}
+.brand-sub{font-family:var(--font-mono);font-size:calc(9.5px * var(--fs-scale));color:var(--text-3);letter-spacing:.1em;text-transform:uppercase;margin-top:1px;}
+
+.nav-group{margin-bottom:4px;}
+.nav-label{font-family:var(--font-mono);font-size:calc(10px * var(--fs-scale));letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);padding:14px 10px 6px;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 10px;border-radius:10px;min-height:44px;
+  color:var(--text-2);font-size:calc(13.5px * var(--fs-scale));font-weight:500;
+  transition:background .15s,color .15s;
+  position:relative;
+}
+.nav-item:hover{background:var(--panel-2);color:var(--text-1);}
+.nav-item.active{background:var(--accent-soft);color:var(--text-1);}
+.nav-item.active::before{
+  content:"";position:absolute;left:-16px;top:50%;transform:translateY(-50%);
+  width:3px;height:16px;border-radius:3px;background:var(--accent);
+  box-shadow:0 0 10px var(--accent-glow);
+}
+.nav-item svg{width:16px;height:16px;opacity:.85;flex-shrink:0;}
+.nav-item.active svg{opacity:1;color:var(--accent-2);}
+.sidebar-spacer{flex:1;}
+.sidebar-foot{border-top:1px solid var(--border);padding-top:12px;display:flex;flex-direction:column;gap:2px;}
+
+.main{min-width:0;}
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 30px;border-bottom:1px solid var(--border);
+  padding-top:calc(16px + env(safe-area-inset-top));
+  position:sticky;top:0;background:rgba(8,11,16,.88);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);z-index:5;
+}
+@supports (background: color-mix(in srgb, red 50%, transparent)){
+  .topbar{ background:color-mix(in srgb, var(--bg) 88%, transparent); }
+}
+.topbar-left{display:flex;align-items:center;gap:10px;}
+.pill{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 11px;border-radius:100px;border:1px solid var(--border-strong);
+  font-size:calc(12px * var(--fs-scale));color:var(--text-2);background:var(--panel-2);
+}
+.pill.accent{color:var(--accent-2);border-color:rgba(61,139,255,.35);background:var(--accent-soft);}
+.lang-switch{display:flex;border:1px solid var(--border);border-radius:100px;padding:2px;background:var(--panel-2);}
+.lang-btn{padding:5px 12px;border-radius:100px;border:none;background:transparent;color:var(--text-2);font-size:calc(12.5px * var(--fs-scale));font-weight:600;}
+.lang-btn.active{background:var(--panel-raised);color:var(--text-1);box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 4px 10px -6px rgba(0,0,0,.5);}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.icon-btn{
+  width:40px;height:40px;min-width:40px;border-radius:10px;border:1px solid var(--border);
+  background:var(--panel-2);color:var(--text-2);display:flex;align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+}
+.icon-btn:hover{color:var(--text-1);border-color:var(--border-strong);}
+.icon-btn svg{width:16px;height:16px;}
+
+.page{padding:34px 30px 70px;padding-bottom:calc(70px + env(safe-area-inset-bottom));max-width:1180px;margin:0 auto;width:100%;}
+.page-head{margin-bottom:26px;}
+.page-head h1{font-size:calc(26px * var(--fs-scale));font-weight:800;}
+.page-head p{color:var(--text-2);font-size:calc(14px * var(--fs-scale));margin-top:6px;max-width:560px;}
+
+/* ============ COMPONENTS ============ */
+.panel{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-panel);
+}
+.panel-pad{padding:24px;}
+.grid{display:grid;gap:16px;}
+.grid-2{grid-template-columns:1fr 1fr;}
+.grid-3{grid-template-columns:repeat(3,1fr);}
+.grid-4{grid-template-columns:repeat(4,1fr);}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px 20px;border-radius:12px;border:1px solid transparent;min-height:44px;
+  font-size:calc(13.5px * var(--fs-scale));font-weight:600;transition:transform .1s, box-shadow .15s, background .15s;
+}
+.btn:active{transform:scale(.97);}
+.btn-primary{
+  background:linear-gradient(180deg,var(--accent),#2f6fdb);
+  color:#fff;box-shadow:0 6px 20px -8px var(--accent-glow), 0 0 0 1px rgba(255,255,255,.08) inset;
+}
+.btn-primary:hover{box-shadow:0 8px 26px -6px var(--accent-glow), 0 0 0 1px rgba(255,255,255,.12) inset;}
+.btn-ghost{background:var(--panel-2);color:var(--text-1);border-color:var(--border);}
+.btn-ghost:hover{border-color:var(--border-strong);}
+.btn-sm{padding:7px 13px;font-size:calc(12.5px * var(--fs-scale));border-radius:9px;min-height:38px;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+
+input[type=text], textarea{
+  width:100%;background:var(--panel-2);border:1px solid var(--border);
+  border-radius:12px;color:var(--text-1);padding:14px 16px;
+  /* mínimo de 16px sempre — abaixo disso o Safari/iOS força zoom automático ao focar o campo */
+  font-size:max(16px, calc(15px * var(--fs-scale)));
+  font-family:var(--font-body);
+}
+input[type=text]:focus, textarea:focus{border-color:var(--accent);}
+input[type=text]::placeholder{color:var(--text-3);}
+input[type=text]{min-width:0;flex:1;}
+
+/* Hero */
+.hero{position:relative;padding:54px 40px;overflow:hidden;}
+.hero-glow{
+  position:absolute;right:-120px;top:-140px;width:460px;height:460px;border-radius:50%;
+  background:radial-gradient(circle, var(--accent-glow), transparent 65%);
+  filter:blur(10px);pointer-events:none;
+}
+.hero-top{display:flex;gap:10px;align-items:center;margin-bottom:22px;}
+.hero h1{font-size:calc(44px * var(--fs-scale));line-height:1.05;font-weight:800;max-width:640px;}
+.hero h1 span{color:var(--accent-2);}
+.hero .lead{font-size:calc(15.5px * var(--fs-scale));color:var(--text-2);max-width:460px;margin-top:14px;}
+.hero-cta{display:flex;gap:12px;margin-top:26px;}
+
+/* signature chain element */
+.chain{display:flex;align-items:center;flex-wrap:wrap;gap:0;}
+.chain-node{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:58px;height:58px;border-radius:14px;background:var(--panel-raised);
+  border:1px solid var(--border-strong);font-family:var(--font-display);
+  font-weight:800;font-size:calc(19px * var(--fs-scale));color:var(--text-1);position:relative;flex-shrink:0;
+  transition:box-shadow .2s,border-color .2s;
+}
+.chain-node.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent), 0 0 22px -4px var(--accent-glow);color:var(--accent-2);}
+.chain-node .sub{font-family:var(--font-mono);font-size:calc(8px * var(--fs-scale));color:var(--text-3);text-transform:uppercase;margin-top:2px;letter-spacing:.06em;}
+.chain-connector{
+  width:26px;height:2px;background:linear-gradient(90deg, var(--border-strong), var(--border-strong));
+  position:relative;flex-shrink:0;
+}
+.chain-connector.on{background:linear-gradient(90deg, var(--accent), var(--accent-2));box-shadow:0 0 8px var(--accent-glow);}
+.chain-word{
+  margin-top:16px;font-family:var(--font-display);font-weight:800;font-size:calc(30px * var(--fs-scale));letter-spacing:.04em;color:var(--text-1);
+}
+
+/* Hero visual mini-flow (vertical) */
+.flow-vert{display:flex;flex-direction:column;align-items:center;gap:0;}
+.flow-step{
+  padding:9px 18px;border-radius:100px;background:var(--panel-2);border:1px solid var(--border);
+  font-size:calc(12.5px * var(--fs-scale));font-weight:600;color:var(--text-2);
+}
+.flow-step.hi{background:var(--accent-soft);border-color:rgba(61,139,255,.4);color:var(--accent-2);}
+.flow-arrow{color:var(--text-3);font-size:calc(14px * var(--fs-scale));padding:4px 0;}
+
+/* stats strip */
+.stat-strip{display:flex;gap:0;}
+.stat-cell{flex:1;padding:20px 22px;border-right:1px solid var(--border);}
+.stat-cell:last-child{border-right:none;}
+.stat-num{font-family:var(--font-display);font-weight:800;font-size:calc(26px * var(--fs-scale));}
+.stat-label{font-size:calc(12px * var(--fs-scale));color:var(--text-2);margin-top:4px;}
+.progress-track{height:6px;border-radius:6px;background:var(--panel-2);overflow:hidden;margin-top:10px;}
+.progress-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--accent),var(--accent-2));box-shadow:0 0 10px var(--accent-glow);}
+
+/* sign tile */
+.sign-tile{
+  background:var(--panel-2);border:1px solid var(--border);border-radius:16px;
+  padding:16px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;
+  transition:border-color .15s, transform .1s, background .15s;
+}
+.sign-tile:hover{border-color:var(--border-strong);transform:translateY(-2px);}
+.sign-tile.selected{border-color:var(--accent);background:var(--accent-soft);}
+.sign-icon{
+  width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  background:var(--panel-raised);border:1px solid var(--border);color:var(--accent-2);
+}
+.sign-icon svg{width:26px;height:26px;}
+.sign-letter{font-family:var(--font-display);font-weight:800;font-size:calc(16px * var(--fs-scale));}
+.sign-tile-cap{font-size:calc(10.5px * var(--fs-scale));color:var(--text-3);text-align:center;}
+
+/* alphabet grid */
+.alpha-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(64px,1fr));gap:10px;}
+
+/* recognition simulation panel */
+.recog-stage{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px;border-radius:18px;background:var(--panel-2);border:1px solid var(--border);
+  min-height:220px;text-align:center;position:relative;
+}
+.recog-status{font-family:var(--font-mono);font-size:calc(12px * var(--fs-scale));color:var(--text-2);letter-spacing:.06em;margin-top:16px;display:flex;align-items:center;gap:8px;}
+.dot-pulse{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 1s infinite ease-in-out;}
+@keyframes pulse{0%,100%{opacity:.3;transform:scale(.8);}50%{opacity:1;transform:scale(1.15);}}
+.confidence{font-family:var(--font-mono);font-size:calc(11px * var(--fs-scale));color:var(--success);margin-top:6px;}
+
+/* modal */
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(4,6,10,.6);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;
+}
+.modal{
+  background:var(--panel-raised);border:1px solid var(--border-strong);border-radius:22px;
+  max-width:420px;width:100%;padding:30px;box-shadow:0 30px 80px -20px rgba(0,0,0,.6);
+}
+
+/* switch — mantém a aparência visual (42x24) mas aumenta a área de toque real
+   via padding + margem negativa, sem deslocar o layout ao redor. */
+.switch{
+  position:relative;width:42px;height:24px;flex-shrink:0;
+  padding:10px;margin:-10px;box-sizing:content-box;
+}
+.switch input{opacity:0;width:0;height:0;}
+.switch .track{position:absolute;top:10px;left:10px;right:10px;bottom:10px;background:var(--panel-2);border:1px solid var(--border-strong);border-radius:100px;transition:.15s;}
+.switch .thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--text-2);transition:.15s;}
+.switch input:checked + .track{background:var(--accent-soft);border-color:var(--accent);}
+.switch input:checked + .track .thumb{left:21px;background:var(--accent);}
+
+/* history item */
+.hist-item{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:12px;background:var(--panel-2);border:1px solid var(--border);}
+.hist-item + .hist-item{margin-top:8px;}
+.hist-word{font-family:var(--font-display);font-weight:700;font-size:calc(15px * var(--fs-scale));}
+.hist-meta{font-size:calc(11.5px * var(--fs-scale));color:var(--text-3);margin-top:2px;}
+
+/* tabs */
+.tabs{display:flex;gap:4px;background:var(--panel-2);border:1px solid var(--border);border-radius:12px;padding:3px;width:fit-content;}
+.tab{padding:8px 16px;border-radius:9px;border:none;background:transparent;color:var(--text-2);font-size:calc(13px * var(--fs-scale));font-weight:600;}
+.tab.active{background:var(--panel-raised);color:var(--text-1);}
+
+.section-title{font-size:calc(13px * var(--fs-scale));font-weight:700;color:var(--text-1);display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.section-title .eyebrow{margin-bottom:0;}
+.divider{height:1px;background:var(--border);margin:26px 0;}
+.badge{font-family:var(--font-mono);font-size:calc(10px * var(--fs-scale));padding:3px 8px;border-radius:6px;background:var(--panel-2);color:var(--text-3);border:1px solid var(--border);text-transform:uppercase;letter-spacing:.06em;}
+.badge.on{background:rgba(52,211,153,.1);color:var(--success);border-color:rgba(52,211,153,.3);}
+.badge.off{background:var(--panel-2);color:var(--text-3);}
+
+.fade-in{animation:fadeIn .35s ease both;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+.empty{padding:40px;text-align:center;color:var(--text-3);font-size:calc(13.5px * var(--fs-scale));}
+.empty svg{width:32px;height:32px;color:var(--text-3);margin-bottom:10px;}
+
+.a11y-row{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--border);}
+.a11y-row:last-child{border-bottom:none;}
+.a11y-row-text .t{font-size:calc(13.5px * var(--fs-scale));font-weight:600;}
+.a11y-row-text .d{font-size:calc(12px * var(--fs-scale));color:var(--text-2);margin-top:2px;}
+
+.hint{font-size:calc(12px * var(--fs-scale));color:var(--text-3);margin-top:8px;}
+
+.sidebar-backdrop{
+  display:none;position:fixed;inset:0;background:rgba(4,6,10,.55);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);
+  z-index:39;opacity:0;transition:opacity .2s;
+}
+.sidebar-backdrop.open{display:block;opacity:1;}
+
+@media (max-width: 880px){
+  .app{grid-template-columns:1fr;}
+  .sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);transition:transform .2s;z-index:40;width:240px;max-width:80vw;}
+  .sidebar.open{transform:translateX(0);}
+  .page{padding:22px 16px 60px;}
+  .hero{padding:30px 20px;}
+  .hero h1{font-size:calc(28px * var(--fs-scale));}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:repeat(2,1fr);}
+  .alpha-grid{grid-template-columns:repeat(auto-fill, minmax(52px,1fr));gap:8px;}
+  .stat-strip{flex-wrap:wrap;}
+  .stat-cell{flex:1 1 50%;border-right:none;border-bottom:1px solid var(--border);}
+  .topbar{padding:12px 14px;gap:8px;}
+  #protoPill{display:none;}
+}
+
+@media (max-width: 640px){
+  .topbar{flex-wrap:wrap;row-gap:10px;}
+  .topbar-left{gap:8px;}
+  .topbar-right{gap:8px;margin-left:auto;}
+  #langPill{display:none;}
+  .lang-switch{flex-shrink:0;}
+  .lang-btn{padding:5px 9px;font-size:calc(11.5px * var(--fs-scale));}
+  .page{padding:18px 14px 56px;}
+  .page-head h1{font-size:calc(21px * var(--fs-scale));}
+  .hero{padding:24px 16px;}
+  .hero-top{gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  .hero h1{font-size:calc(24px * var(--fs-scale));}
+  .hero .lead{font-size:calc(14px * var(--fs-scale));max-width:100%;}
+  .hero-cta{flex-direction:column;align-items:stretch;}
+  .hero-cta .btn{width:100%;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .stat-cell{flex:1 1 100%;padding:16px 18px;}
+  .panel-pad{padding:18px;}
+  .chain-node{width:44px;height:44px;border-radius:11px;font-size:calc(15px * var(--fs-scale));}
+  .chain-node .sub{display:none;}
+  .chain-connector{width:14px;}
+  .chain-word{font-size:calc(22px * var(--fs-scale));}
+  .recog-stage{padding:24px 16px;min-height:170px;}
+  .sign-icon{width:44px;height:44px;}
+  .sign-icon svg{width:20px;height:20px;}
+  .tabs{width:100%;}
+  .tab{flex:1;text-align:center;padding:8px 6px;}
+  .a11y-row{flex-direction:column;align-items:flex-start;gap:10px;}
+  .a11y-row > div:last-child{width:100%;}
+  input[type=text]{font-size:max(16px, calc(14px * var(--fs-scale)));padding:12px 14px;}
+  .btn{padding:10px 16px;font-size:calc(13px * var(--fs-scale));}
+  .modal{padding:22px;}
+  #ttsInput, #homeDemoInput{min-width:0;}
+  .panel-pad > div[style*="display:flex"][style*="gap:10px"]{flex-wrap:wrap;}
+}
+</style>
+</head>
+<body data-theme="dark">
+<div class="app">
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
+  <aside class="sidebar" id="sidebar" aria-label="Menu principal">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 12a6 6 0 1 1 6 6" stroke="white" stroke-width="2" stroke-linecap="round"/><path d="M18 12a6 6 0 1 0-6-6" stroke="white" stroke-width="2" stroke-linecap="round" opacity=".5"/></svg>
+      </div>
+      <div>
+        <div class="brand-name">ConnectLibras</div>
+        <div class="brand-sub">Protótipo · Beta</div>
+      </div>
+    </div>
+
+    <button class="icon-btn" id="sidebarCloseBtn" style="display:none;align-self:flex-end;margin-bottom:6px;" onclick="closeSidebar()" aria-label="Fechar menu">✕</button>
+    <nav id="nav" aria-label="Navegação principal"></nav>
+    <div class="sidebar-spacer"></div>
+    <div class="sidebar-foot">
+      <a href="#/settings" class="nav-item" onclick="closeSidebar()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M4 12h2m12 0h2M12 4v2m0 12v2M6.3 6.3l1.4 1.4m8.6 8.6 1.4 1.4M6.3 17.7l1.4-1.4m8.6-8.6 1.4-1.4"/></svg>Idioma &amp; acessibilidade</a>
+      <a href="#/settings" class="nav-item" id="themeNavItem" onclick="closeSidebar()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z"/></svg>Tema</a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="icon-btn" id="menuBtn" style="display:none" onclick="toggleSidebar()" aria-label="Abrir menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round"/></svg>
+        </button>
+        <span class="pill accent" id="langPill">🇧🇷 Libras</span>
+        <span class="pill" id="protoPill">Protótipo — sem hardware</span>
+      </div>
+      <div class="topbar-right">
+        <div class="lang-switch" role="group" aria-label="Selecionar idioma de sinais">
+          <button class="lang-btn" id="btnLangLibras" onclick="setLang('libras')" aria-label="Usar Libras">🇧🇷 Libras</button>
+          <button class="lang-btn" id="btnLangKsl" onclick="setLang('ksl')" aria-label="Usar KSL">🇰🇷 KSL</button>
+        </div>
+        <button class="icon-btn" title="Alternar tema" aria-label="Alternar entre tema claro e escuro" onclick="toggleTheme()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z"/></svg>
+        </button>
+      </div>
+    </div>
+    <main id="app" class="page"></main>
+  </div>
+</div>
+
+<div id="modalRoot"></div>
+
+<script>
+/* ============================================================
+   CONNECTLIBRAS — PROTOTYPE APP (no backend, no hardware)
+   ============================================================ */
+
+/* ---------- DATA ---------- */
+const LIBRAS_ALPHABET = [
+ ["A","Mão fechada em punho, polegar apoiado na lateral do indicador."],
+ ["B","Mão aberta, dedos unidos e esticados, polegar dobrado sobre a palma."],
+ ["C","Mão curvada em formato de C, como se segurasse um copo."],
+ ["D","Indicador esticado para cima; polegar e demais dedos formam um círculo."],
+ ["E","Dedos dobrados sobre a palma, tocando a base do polegar."],
+ ["F","Polegar e indicador unidos em círculo; demais dedos esticados."],
+ ["G","Indicador e polegar esticados na horizontal, como uma pinça deitada."],
+ ["H","Indicador e médio esticados e unidos, na horizontal."],
+ ["I","Mindinho esticado para cima; demais dedos fechados."],
+ ["J","Configuração do I, com um traço em curva no ar — sinal dinâmico."],
+ ["K","Indicador e médio em V, com o polegar apoiado entre eles."],
+ ["L","Indicador para cima e polegar na horizontal, formando um L."],
+ ["M","Polegar entre o anelar e o mindinho; três dedos sobre o polegar."],
+ ["N","Polegar entre o médio e o anelar; dois dedos sobre o polegar."],
+ ["O","Todos os dedos curvados, formando um círculo fechado."],
+ ["P","Configuração do K, com a mão apontada para baixo."],
+ ["Q","Configuração do G, com a mão apontada para baixo."],
+ ["R","Indicador e médio cruzados."],
+ ["S","Punho fechado, polegar sobre os dedos dobrados."],
+ ["T","Polegar entre o indicador e o médio, punho fechado."],
+ ["U","Indicador e médio esticados e unidos, apontando para cima."],
+ ["V","Indicador e médio esticados, separados em V."],
+ ["W","Indicador, médio e anelar esticados e separados."],
+ ["X","Indicador curvado em forma de gancho."],
+ ["Y","Polegar e mindinho esticados; demais dedos fechados."],
+ ["Z","Indicador traça a letra Z no ar — sinal dinâmico."],
+];
+// Construído com reduce() em vez de Object.fromEntries() para máxima
+// compatibilidade com versões mais antigas de Safari/iOS.
+const LIBRAS_MAP = LIBRAS_ALPHABET.reduce(function(acc, pair){ acc[pair[0]] = pair[1]; return acc; }, {});
+
+// Word-level Libras signs available in the (small) prototype database.
+// Clearly flagged as illustrative placeholders for the prototype, not verified official artwork.
+const WORD_SIGNS_LIBRAS = {
+  "AMOR":"Mãos em formato de S cruzadas sobre o peito.",
+  "AMO":"Mão em formato de S sobre o peito, próxima ao coração.",
+  "EU":"Indicador aponta para o próprio peito.",
+  "VOCE":"Indicador aponta para a pessoa com quem se fala.",
+  "OI":"Mão aberta balança levemente ao lado da cabeça.",
+  "OLA":"Mão aberta balança levemente ao lado da cabeça.",
+  "OBRIGADO":"Mão aberta toca o queixo e se move para frente.",
+  "CASA":"As duas mãos desenham o formato de um telhado.",
+  "AGUA":"Letra A toca o queixo levemente, repetindo o movimento.",
+};
+
+// Korean Hangul jamo referenced from the KSL manual-alphabet chart (consonants / vowels).
+const KSL_CONSONANTS = ["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
+const KSL_VOWELS = ["ㅏ","ㅑ","ㅓ","ㅕ","ㅗ","ㅛ","ㅜ","ㅠ","ㅡ","ㅣ"];
+const HANGUL_INITIALS = ["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
+const HANGUL_MEDIALS = ["ㅏ","ㅐ","ㅑ","ㅒ","ㅓ","ㅔ","ㅕ","ㅖ","ㅗ","ㅘ","ㅙ","ㅚ","ㅛ","ㅜ","ㅝ","ㅞ","ㅟ","ㅠ","ㅡ","ㅢ","ㅣ"];
+const HANGUL_FINALS = ["","ㄱ","ㄲ","ㄳ","ㄴ","ㄵ","ㄶ","ㄷ","ㄹ","ㄺ","ㄻ","ㄼ","ㄽ","ㄾ","ㄿ","ㅀ","ㅁ","ㅂ","ㅄ","ㅅ","ㅆ","ㅇ","ㅈ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
+
+function decomposeHangul(ch){
+  const code = ch.codePointAt(0) - 0xAC00;
+  if(code < 0 || code > 11171) return null;
+  const final = code % 28;
+  const medial = ((code - final)/28) % 21;
+  const initial = (((code - final)/28) - medial)/21;
+  return [HANGUL_INITIALS[initial], HANGUL_MEDIALS[medial], final ? HANGUL_FINALS[final] : null].filter(Boolean);
+}
+
+/* ---------- STORAGE ---------- */
+/* Safari (especialmente em file:// e Navegação Privada) pode bloquear localStorage
+   por completo — inclusive lançar erro ao apenas ACESSAR window.localStorage.
+   Por isso testamos a disponibilidade uma única vez e usamos um fallback em
+   memória, para o app nunca travar mesmo sem armazenamento persistente. */
+function detectStorage(){
+  try{
+    const testKey = '__cl_test__';
+    window.localStorage.setItem(testKey, '1');
+    window.localStorage.removeItem(testKey);
+    return window.localStorage;
+  }catch(e){
+    console.warn('ConnectLibras: localStorage indisponível neste navegador/contexto, usando memória temporária.', e);
+    const mem = {};
+    return {
+      getItem:(k)=> (k in mem ? mem[k] : null),
+      setItem:(k,v)=>{ mem[k]=String(v); },
+      removeItem:(k)=>{ delete mem[k]; }
+    };
+  }
+}
+const storageDriver = detectStorage();
+const LS = {
+  get(k, fallback){ try{ const v = storageDriver.getItem(k); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; } },
+  set(k, v){ try{ storageDriver.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+
+/* ---------- SAFE DOM HELPER ----------
+   Nunca deixa o script parar por um elemento que não existe no momento
+   da chamada (ex: DOM ainda carregando, ou HTML dinâmico não montado). */
+function $id(id){
+  try{ return document.getElementById(id); }catch(e){ return null; }
+}
+function withEl(id, fn){
+  const el = $id(id);
+  if(el){ try{ fn(el); }catch(e){ console.warn('ConnectLibras: erro ao atualizar #'+id, e); } }
+  return el;
+}
+const defaultStats = { xp: 1240, level: 5, streak: 7, signsLearned: 42, wordsPracticed: 27, phrasesPracticed: 8, signsRecognized: 125, accuracy: 94 };
+function getStats(){ return LS.get('cl_stats', defaultStats); }
+function saveStats(s){ LS.set('cl_stats', s); }
+function getHistory(){ return LS.get('cl_history', []); }
+function addHistory(entry){
+  const h = getHistory();
+  h.unshift({ ...entry, id: Date.now(), date: new Date().toLocaleDateString('pt-BR') });
+  LS.set('cl_history', h.slice(0,50));
+}
+function deleteHistoryItem(id){
+  LS.set('cl_history', getHistory().filter(x=>x.id!==id));
+  render();
+}
+function bumpStat(field, amount){
+  const s = getStats(); s[field] = (s[field]||0) + amount; s.xp += 5; saveStats(s);
+}
+
+/* ---------- STATE ---------- */
+const state = {
+  lang: LS.get('cl_lang','libras'),
+  theme: LS.get('cl_theme','dark'),
+  a11y: LS.get('cl_a11y', { fontSize:1, highContrast:false, reduceMotion:false }),
+  route: location.hash || '#/home',
+  sttBuffer: [],     // sinais -> texto buffer (array of letters/jamo)
+  ttsResult: null,   // texto -> sinais current result
+};
+
+function applyTheme(){
+  document.body.setAttribute('data-theme', state.theme);
+  document.body.setAttribute('data-contrast', state.a11y.highContrast ? 'high' : 'normal');
+  document.body.setAttribute('data-motion', state.a11y.reduceMotion ? 'reduced' : 'normal');
+  document.documentElement.style.setProperty('--fs-scale', state.a11y.fontSize);
+}
+function toggleTheme(){
+  state.theme = state.theme === 'dark' ? 'light' : 'dark';
+  LS.set('cl_theme', state.theme); applyTheme();
+}
+function syncLangButtonsUI(){
+  withEl('btnLangLibras', el=>el.classList.toggle('active', state.lang==='libras'));
+  withEl('btnLangKsl', el=>el.classList.toggle('active', state.lang==='ksl'));
+  withEl('langPill', el=>{ el.textContent = state.lang==='libras' ? '🇧🇷 Libras' : '🇰🇷 KSL'; });
+}
+function setLang(l){
+  state.lang = l; LS.set('cl_lang', l);
+  syncLangButtonsUI();
+  state.sttBuffer = [];
+  render();
+}
+
+/* ---------- ICONS ---------- */
+const ICON_HAND = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12.5V6a1.5 1.5 0 0 1 3 0v5"/><path d="M11 11V4.5a1.5 1.5 0 0 1 3 0V11"/><path d="M14 11.2V6a1.5 1.5 0 0 1 3 0v7"/><path d="M17 11v2a1.5 1.5 0 0 1 3 0v3.5A5.5 5.5 0 0 1 14.5 22h-2A6.5 6.5 0 0 1 6 15.5v-3a1.5 1.5 0 0 1 3-.2"/></svg>`;
+const NAV_ICONS = {
+  home:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9a1 1 0 0 0 1 1h4v-6h2v6h4a1 1 0 0 0 1-1v-9"/></svg>`,
+  tts:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h10M4 17h6"/><path d="M17 15l3 3 -3 3" /></svg>`,
+  stt:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7 4 7M20 12l-10 0M20 17l-6 0"/><path d="M7 15l-3 3 3 3"/></svg>`,
+  learn:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>`,
+  alpha:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V6a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v14M4 14h7"/><path d="M15 20V8a2 2 0 0 1 2-2 2 2 0 0 1 2 2v12"/></svg>`,
+  hist:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v4.5l3 2"/></svg>`,
+  stats:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>`,
+  settings:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M4 12h2m12 0h2M12 4v2m0 12v2M6.3 6.3l1.4 1.4m8.6 8.6 1.4 1.4M6.3 17.7l1.4-1.4m8.6-8.6 1.4-1.4"/></svg>`,
+};
+const NAV_ITEMS = [
+  {href:'#/home', label:'Home', icon:'home'},
+  {href:'#/texto-sinais', label:'Texto → Sinais', icon:'tts'},
+  {href:'#/sinais-texto', label:'Sinais → Texto', icon:'stt'},
+  {href:'#/aprender', label:'Aprender', icon:'learn'},
+  {href:'#/alfabeto', label:'Alfabeto', icon:'alpha'},
+  {href:'#/historico', label:'Histórico', icon:'hist'},
+  {href:'#/estatisticas', label:'Estatísticas', icon:'stats'},
+  {href:'#/settings', label:'Configurações', icon:'settings'},
+];
+function renderNav(){
+  withEl('nav', nav=>{
+    nav.innerHTML = `<div class="nav-group">` + NAV_ITEMS.map(it=>
+      `<a class="nav-item ${state.route===it.href?'active':''}" href="${it.href}" onclick="closeSidebar()">${NAV_ICONS[it.icon]}${it.label}</a>`
+    ).join('') + `</div>`;
+  });
+}
+function openSidebar(){
+  withEl('sidebar', el=>el.classList.add('open'));
+  withEl('sidebarBackdrop', el=>el.classList.add('open'));
+  withEl('sidebarCloseBtn', el=>{ el.style.display = 'flex'; });
+  document.body.style.overflow = 'hidden';
+}
+function closeSidebar(){
+  withEl('sidebar', el=>el.classList.remove('open'));
+  withEl('sidebarBackdrop', el=>el.classList.remove('open'));
+  withEl('sidebarCloseBtn', el=>{ el.style.display = 'none'; });
+  document.body.style.overflow = '';
+}
+function toggleSidebar(){
+  const sb = $id('sidebar');
+  if(sb && sb.classList.contains('open')) closeSidebar(); else openSidebar();
+}
+
+/* ---------- HELPERS: word normalize & sign lookup ---------- */
+function stripAccents(str){ return str.normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+function normWord(w){ return stripAccents(w).toUpperCase().replace(/[^A-ZÇ]/g,''); }
+
+function findWordSign(word){
+  const key = normWord(word).replace('Ç','C');
+  return WORD_SIGNS_LIBRAS[key] || null;
+}
+
+/* Build a "chain" visual of letters/jamo with connectors */
+function buildChain(items, activeIndex=-1){
+  return `<div class="chain">` + items.map((it,i)=>
+    `${i>0 ? `<div class="chain-connector ${activeIndex>=i?'on':''}"></div>` : ''}
+     <div class="chain-node ${activeIndex===i?'active':''}"><span>${it}</span><span class="sub">${state.lang==='libras'?'letra':'jamo'}</span></div>`
+  ).join('') + `</div>`;
+}
+
+/* ---------- ROUTER ---------- */
+function render(){
+  state.route = location.hash || '#/home';
+  closeSidebar();
+  renderNav();
+  syncLangButtonsUI();
+  applyTheme();
+  const app = $id('app');
+  if(!app){ console.warn('ConnectLibras: #app não encontrado ainda.'); return; }
+  app.classList.remove('fade-in'); void app.offsetWidth; app.classList.add('fade-in');
+
+  const route = state.route.split('?')[0];
+  if(route === '#/home') return renderHome();
+  if(route === '#/texto-sinais') return renderTextToSign();
+  if(route === '#/sinais-texto') return renderSignToText();
+  if(route === '#/aprender') return renderLearn();
+  if(route === '#/alfabeto') return renderAlphabet();
+  if(route === '#/historico') return renderHistory();
+  if(route === '#/estatisticas') return renderStats();
+  if(route === '#/settings') return renderSettings();
+  return renderHome();
+}
+window.addEventListener('hashchange', render);
+
+/* ============================================================
+   PAGE: HOME
+   ============================================================ */
+function renderHome(){
+  const stats = getStats();
+  const app = $id('app');
+  if(!app) return;
+  app.innerHTML = `
+  <div class="panel hero" style="margin-bottom:20px;">
+    <div class="hero-glow"></div>
+    <div class="hero-top">
+      <span class="pill accent">PROTÓTIPO</span>
+      <span class="pill">Sem luva · Sem câmera · 100% interface</span>
+    </div>
+    <div class="grid grid-2" style="align-items:center;gap:30px;">
+      <div>
+        <h1>ConnectLibras<br><span>conectando mãos, pessoas e idiomas.</span></h1>
+        <p class="lead">Uma nova forma de aproximar pessoas através das Línguas de Sinais e da tecnologia — começando por Libras e pela Língua de Sinais Coreana (KSL).</p>
+        <div class="hero-cta">
+          <a href="#/texto-sinais" class="btn btn-primary">Traduzir texto em sinais</a>
+          <a href="#/sinais-texto" class="btn btn-ghost">Experimentar reconhecimento</a>
+        </div>
+      </div>
+      <div class="panel-pad" style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <div class="flow-vert">
+          <div class="flow-step">Movimento</div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step hi">Sinal</div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">Letra · A</div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">Texto</div>
+        </div>
+        <div class="hint" style="margin-top:16px;text-align:center;">Fluxo conceitual do ConnectLibras</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-bottom:20px;">
+    <div class="stat-strip">
+      <div class="stat-cell">
+        <div class="stat-num">${stats.xp>=1000?(stats.xp/1000).toFixed(1)+'k':stats.xp}</div>
+        <div class="stat-label">XP · nível ${stats.level}</div>
+        <div class="progress-track"><div class="progress-fill" style="width:${(stats.xp%1000)/10}%"></div></div>
+      </div>
+      <div class="stat-cell"><div class="stat-num">${stats.signsLearned}</div><div class="stat-label">Sinais aprendidos</div></div>
+      <div class="stat-cell"><div class="stat-num">${stats.wordsPracticed}</div><div class="stat-label">Palavras praticadas</div></div>
+      <div class="stat-cell"><div class="stat-num">${stats.streak} dias</div><div class="stat-label">Sequência atual</div></div>
+    </div>
+  </div>
+
+  <div class="panel panel-pad" style="margin-bottom:20px;">
+    <div class="section-title"><span class="eyebrow">Demonstração</span></div>
+    <h2 style="font-size:calc(19px * var(--fs-scale));margin-bottom:6px;">Experimente o ConnectLibras</h2>
+    <p style="color:var(--text-2);font-size:calc(13.5px * var(--fs-scale));margin-bottom:18px;">Digite uma palavra e veja a soletração manual em ${state.lang==='libras'?'Libras':'KSL'} — sem precisar sair da Home.</p>
+    <div style="display:flex;gap:10px;max-width:440px;">
+      <input type="text" id="homeDemoInput" placeholder="Digite uma palavra, ex: AMOR" value="AMOR">
+      <button class="btn btn-primary" onclick="homeDemoRun()">Mostrar sinais</button>
+    </div>
+    <div id="homeDemoResult" style="margin-top:24px;"></div>
+  </div>
+
+  <div class="panel panel-pad">
+    <div class="section-title"><span class="eyebrow">Próximo passo</span></div>
+    <h2 style="font-size:calc(19px * var(--fs-scale));margin-bottom:6px;">O futuro do ConnectLibras</h2>
+    <p style="color:var(--text-2);font-size:calc(13.5px * var(--fs-scale));max-width:640px;margin-bottom:22px;">Hoje o reconhecimento de sinais é simulado pela interface. A visão do projeto é integrar futuramente uma luva inteligente com sensores de movimento — sem que isso altere a forma como você já usa o aplicativo.</p>
+    <div class="chain" style="flex-wrap:wrap;">
+      <div class="chain-node"><span style="font-size:calc(11px * var(--fs-scale));">Luva</span></div>
+      <div class="chain-connector"></div>
+      <div class="chain-node"><span style="font-size:calc(10px * var(--fs-scale));">Sensores</span></div>
+      <div class="chain-connector"></div>
+      <div class="chain-node"><span style="font-size:calc(10px * var(--fs-scale));">Movimento</span></div>
+      <div class="chain-connector"></div>
+      <div class="chain-node active"><span style="font-size:calc(9px * var(--fs-scale));">Connect<br>Libras</span></div>
+      <div class="chain-connector"></div>
+      <div class="chain-node"><span style="font-size:calc(10px * var(--fs-scale));">Texto</span></div>
+    </div>
+    <div class="hint">Nenhum hardware é utilizado ou simulado nesta versão — a luva é apenas uma possibilidade futura.</div>
+  </div>
+  `;
+  withEl('homeDemoInput', el=>el.addEventListener('keydown', e=>{ if(e.key==='Enter') homeDemoRun(); }));
+  homeDemoRun();
+}
+function homeDemoRun(){
+  const input = $id('homeDemoInput');
+  const box = $id('homeDemoResult');
+  if(!input || !box) return;
+  const word = input.value.trim();
+  if(!word){ box.innerHTML = ''; return; }
+  box.innerHTML = renderSpellChain(word, false);
+}
+
+/* ============================================================
+   SHARED: spelling chain renderer (used by Home + Texto→Sinais)
+   ============================================================ */
+function renderSpellChain(word, showWordSignBlock){
+  const upper = word.trim().toUpperCase();
+  if(!upper) return '';
+  let items = [];
+  if(state.lang === 'libras'){
+    items = upper.split('').filter(c=>/[A-ZÇ ]/.test(c));
+  } else {
+    // KSL: decompose hangul syllables into jamo; keep any raw jamo already typed
+    items = [];
+    for(const ch of upper){
+      if(ch === ' '){ items.push(' '); continue; }
+      const dec = decomposeHangul(ch);
+      if(dec) items.push(...dec);
+      else if(KSL_CONSONANTS.includes(ch) || KSL_VOWELS.includes(ch)) items.push(ch);
+    }
+  }
+  const displayItems = items.filter(i=>i!==' ');
+  const wordSign = state.lang==='libras' ? findWordSign(upper) : null;
+
+  let html = `<div>
+    <div class="eyebrow" style="margin-bottom:10px;">Soletração manual</div>
+    ${buildChain(displayItems.length ? displayItems : ['—'])}
+    <div class="chain-word">${upper}</div>
+  </div>`;
+
+  if(showWordSignBlock){
+    html += `<div class="divider"></div>`;
+    html += `<div class="eyebrow" style="margin-bottom:10px;">Sinal da palavra</div>`;
+    if(wordSign){
+      html += `<div class="panel-pad" style="background:var(--panel-2);border:1px solid var(--border);border-radius:16px;display:flex;gap:18px;align-items:center;">
+        <div class="sign-icon" style="width:64px;height:64px;">${ICON_HAND}</div>
+        <div>
+          <div style="font-weight:700;font-size:calc(15px * var(--fs-scale));">Sinal específico de "${upper}"</div>
+          <div style="color:var(--text-2);font-size:calc(13px * var(--fs-scale));margin-top:4px;">${wordSign}</div>
+          <div class="hint">Representação ilustrativa do protótipo — imagem/vídeo oficial a ser integrado no banco de dados.</div>
+        </div>
+      </div>`;
+    } else if(state.lang==='ksl'){
+      html += `<div class="empty" style="text-align:left;padding:18px;">
+        Em KSL, o alfabeto manual é usado para soletração (nomes, termos emprestados). Sinais de palavras completas seguem um vocabulário próprio, ainda não incluído neste protótipo — por isso mostramos apenas a soletração acima.
+      </div>`;
+    } else {
+      html += `<div class="empty" style="text-align:left;padding:18px;">
+        Sinal específico ainda não disponível no banco de dados deste protótipo.<br>Você pode visualizar a soletração manual acima.
+      </div>`;
+    }
+  }
+  return html;
+}
+
+/* ============================================================
+   PAGE: TEXTO → SINAIS
+   ============================================================ */
+function renderTextToSign(){
+  const app = $id('app');
+  if(!app) return;
+  app.innerHTML = `
+    <div class="page-head">
+      <h1>Texto → Sinais</h1>
+      <p>Digite uma palavra ou frase e visualize a soletração manual, o sinal específico (quando existir) e a reprodução em sequência.</p>
+    </div>
+
+    <div class="panel panel-pad" style="margin-bottom:20px;">
+      <div class="eyebrow" style="margin-bottom:10px;">Digite uma palavra ou frase</div>
+      <div style="display:flex;gap:10px;">
+        <input type="text" id="ttsInput" placeholder="Ex: AMOR ou EU AMO VOCÊ">
+        <button class="btn btn-primary" onclick="ttsRun()">Mostrar sinais</button>
+      </div>
+    </div>
+
+    <div id="ttsResult"></div>
+  `;
+  withEl('ttsInput', el=>el.addEventListener('keydown', e=>{ if(e.key==='Enter') ttsRun(); }));
+}
+function ttsRun(){
+  const input = $id('ttsInput');
+  const box = $id('ttsResult');
+  if(!input || !box) return;
+  const raw = input.value.trim();
+  if(!raw){ box.innerHTML=''; return; }
+  const words = raw.split(/\s+/).filter(Boolean);
+  state.ttsResult = { words, playIndex: 0, playing:false };
+
+  if(words.length === 1){
+    box.innerHTML = `<div class="panel panel-pad">${renderSpellChain(words[0], true)} ${renderPlayback(words[0])}</div>`;
+  } else {
+    box.innerHTML = `<div class="panel panel-pad">
+      <div class="eyebrow" style="margin-bottom:14px;">Frase — ${words.length} palavras</div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:22px;">
+        ${words.map(w=>`<span class="badge" style="font-size:calc(12px * var(--fs-scale));padding:6px 12px;">${w.toUpperCase()}</span>`).join('<span style="color:var(--text-3)">·</span>')}
+      </div>
+      ${words.map((w,i)=>`<div style="margin-bottom:22px;"><div style="font-weight:700;font-size:calc(14px * var(--fs-scale));margin-bottom:10px;">${i+1}. ${w.toUpperCase()}</div>${renderSpellChain(w, true)}</div>`).join('<div class="divider"></div>')}
+    </div>`;
+  }
+  bumpStat(words.length>1 ? 'phrasesPracticed' : 'wordsPracticed', 1);
+  addHistory({ type: words.length>1?'frase':'palavra', text: raw.toUpperCase(), lang: state.lang });
+}
+function renderPlayback(word){
+  return `
+  <div class="divider"></div>
+  <div class="eyebrow" style="margin-bottom:10px;">Reprodução</div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <button class="btn btn-ghost btn-sm" onclick="playbackStep(-1)">◀ Anterior</button>
+    <button class="btn btn-primary btn-sm" id="playBtn" onclick="playbackToggle()">▶ Reproduzir</button>
+    <button class="btn btn-ghost btn-sm" onclick="playbackStep(1)">Próximo ▶</button>
+    <button class="btn btn-ghost btn-sm" onclick="playbackReset()">↺ Repetir</button>
+    <span class="badge" id="playCounter" style="margin-left:auto;">0 / 0</span>
+  </div>`;
+}
+let playTimer = null;
+function playbackToggle(){
+  if(!state.ttsResult) return;
+  const btn = $id('playBtn');
+  if(!btn) return;
+  if(state.ttsResult.playing){ state.ttsResult.playing=false; clearInterval(playTimer); btn.textContent='▶ Reproduzir'; return; }
+  state.ttsResult.playing = true; btn.textContent = '⏸ Pausar';
+  playTimer = setInterval(()=>playbackStep(1), 900);
+}
+function playbackReset(){ if(!state.ttsResult) return; state.ttsResult.playIndex = 0; playbackStep(0); }
+function playbackStep(dir){
+  if(!state.ttsResult) return;
+  const word = state.ttsResult.words[0] || '';
+  const items = state.lang==='libras' ? word.toUpperCase().split('').filter(c=>/[A-ZÇ]/.test(c)) :
+    (()=>{ const arr=[]; for(const ch of word.toUpperCase()){ const d=decomposeHangul(ch); if(d) arr.push(...d); } return arr; })();
+  if(!items.length) return;
+  state.ttsResult.playIndex = Math.max(0, Math.min(items.length-1, state.ttsResult.playIndex + dir));
+  withEl('playCounter', el=>{ el.textContent = `${state.ttsResult.playIndex+1} / ${items.length}`; });
+  document.querySelectorAll('.chain-node').forEach((n,i)=>{
+    n.classList.toggle('active', i===state.ttsResult.playIndex);
+  });
+}
+
+/* ============================================================
+   PAGE: SINAIS → TEXTO
+   ============================================================ */
+function renderSignToText(){
+  const app = $id('app');
+  if(!app) return;
+  const options = state.lang==='libras' ? LIBRAS_ALPHABET.map(x=>x[0]) : [...KSL_CONSONANTS, ...KSL_VOWELS];
+  app.innerHTML = `
+    <div class="page-head">
+      <h1>Sinais → Texto</h1>
+      <p>Selecione um sinal para simular o reconhecimento. Como ainda não existe luva ou câmera, cada seleção representa o que a luva enviaria no futuro.</p>
+    </div>
+
+    <div class="grid grid-2" style="align-items:start;">
+      <div class="panel panel-pad">
+        <div class="eyebrow" style="margin-bottom:12px;">Sinal atual</div>
+        <div class="recog-stage" id="recogStage">
+          <div class="sign-icon" style="width:74px;height:74px;">${ICON_HAND}</div>
+          <div class="recog-status" style="margin-top:18px;color:var(--text-3);">Selecione um sinal ao lado para começar</div>
+        </div>
+        <div class="divider"></div>
+        <div class="eyebrow" style="margin-bottom:10px;">Reconhecimento</div>
+        <div id="recogResult" style="display:flex;align-items:center;gap:14px;">
+          <div class="sign-letter" style="font-size:calc(30px * var(--fs-scale));" id="recogLetter">—</div>
+          <div>
+            <div class="badge off" id="recogBadge">Aguardando</div>
+            <div class="confidence" id="recogConf"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel panel-pad">
+        <div class="eyebrow" style="margin-bottom:12px;">Sinais disponíveis · ${state.lang==='libras'?'Alfabeto Libras':'Alfabeto manual KSL'}</div>
+        <div class="alpha-grid" id="signPicker" style="max-height:300px;overflow:auto;padding-right:4px;">
+          ${options.map(letter=>`<button class="sign-tile" style="padding:10px 4px;" onclick="pickSign('${letter}', this)"><div class="sign-letter" style="font-size:calc(15px * var(--fs-scale));">${letter}</div></button>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="panel panel-pad" style="margin-top:20px;">
+      <div class="eyebrow" style="margin-bottom:12px;">Construção de palavra / frase</div>
+      ${state.sttBuffer.length ? buildChain(state.sttBuffer) : `<div class="empty">Nenhum sinal adicionado ainda. Selecione sinais na lista acima.</div>`}
+      <div class="chain-word" id="sttWord">${state.sttBuffer.join('').replace(/ {2,}/g,' ') || ''}</div>
+      <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" onclick="sttSpace()">␣ Espaço</button>
+        <button class="btn btn-ghost btn-sm" onclick="sttBackspace()">⌫ Apagar último</button>
+        <button class="btn btn-ghost btn-sm" onclick="sttClear()">🗑 Apagar tudo</button>
+        <button class="btn btn-primary btn-sm" onclick="sttSave()">💾 Salvar</button>
+      </div>
+    </div>
+  `;
+}
+function pickSign(letter, btnEl){
+  document.querySelectorAll('#signPicker .sign-tile').forEach(b=>b.classList.remove('selected'));
+  if(btnEl) btnEl.classList.add('selected');
+  const stage = $id('recogStage');
+  const badge = $id('recogBadge');
+  const conf = $id('recogConf');
+  const letterEl = $id('recogLetter');
+  if(!stage || !badge || !conf || !letterEl) return;
+  const oldStatus = stage.querySelector('.recog-status');
+  if(oldStatus) oldStatus.remove();
+  const statusEl = document.createElement('div');
+  statusEl.className = 'recog-status';
+  statusEl.innerHTML = `<span class="dot-pulse"></span> Analisando sinal...`;
+  stage.appendChild(statusEl);
+  badge.textContent = 'Processando'; badge.className='badge off';
+  conf.textContent = '';
+  letterEl.textContent = '…';
+
+  setTimeout(()=>{
+    statusEl.innerHTML = `<span class="dot-pulse"></span> Processando movimento...`;
+  }, 380);
+
+  setTimeout(()=>{
+    statusEl.innerHTML = `✓ Sinal reconhecido`;
+    statusEl.style.color = 'var(--success)';
+    letterEl.textContent = letter;
+    badge.textContent = 'Sinal reconhecido'; badge.className = 'badge on';
+    const confidence = 92 + Math.floor(Math.random()*7);
+    conf.textContent = `${confidence}% de confiança`;
+    state.sttBuffer.push(letter);
+    bumpStat('signsRecognized', 1);
+    renderSignToText_updateBuffer();
+  }, 1000);
+}
+function renderSignToText_updateBuffer(){
+  // re-render just the buffer panel to avoid losing recognition state above
+  const panels = document.querySelectorAll('.panel.panel-pad');
+  const bufferPanel = panels[panels.length-1];
+  if(!bufferPanel) return;
+  bufferPanel.innerHTML = `
+    <div class="eyebrow" style="margin-bottom:12px;">Construção de palavra / frase</div>
+    ${state.sttBuffer.length ? buildChain(state.sttBuffer) : `<div class="empty">Nenhum sinal adicionado ainda. Selecione sinais na lista acima.</div>`}
+    <div class="chain-word" id="sttWord">${state.sttBuffer.join('')}</div>
+    <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
+      <button class="btn btn-ghost btn-sm" onclick="sttSpace()">␣ Espaço</button>
+      <button class="btn btn-ghost btn-sm" onclick="sttBackspace()">⌫ Apagar último</button>
+      <button class="btn btn-ghost btn-sm" onclick="sttClear()">🗑 Apagar tudo</button>
+      <button class="btn btn-primary btn-sm" onclick="sttSave()">💾 Salvar</button>
+    </div>`;
+}
+function sttSpace(){ state.sttBuffer.push(' '); renderSignToText_updateBuffer(); }
+function sttBackspace(){ state.sttBuffer.pop(); renderSignToText_updateBuffer(); }
+function sttClear(){ state.sttBuffer = []; renderSignToText_updateBuffer(); }
+function sttSave(){
+  if(!state.sttBuffer.length) return;
+  const text = state.sttBuffer.join('');
+  addHistory({ type: text.includes(' ') ? 'frase' : 'palavra', text, lang: state.lang, origem:'sinais-texto' });
+  bumpStat('wordsPracticed', 1);
+  sttClear();
+  alert('Salvo no histórico: ' + text);
+}
+
+/* ============================================================
+   PAGE: APRENDER
+   ============================================================ */
+function renderLearn(){
+  const app = $id('app');
+  if(!app) return;
+  const alphaOptions = state.lang==='libras' ? LIBRAS_ALPHABET.map(x=>x[0]) : [...KSL_CONSONANTS, ...KSL_VOWELS];
+  const wordOptions = state.lang==='libras' ? Object.keys(WORD_SIGNS_LIBRAS) : [];
+  app.innerHTML = `
+    <div class="page-head">
+      <h1>Aprender</h1>
+      <p>Escolha uma letra ou palavra para estudar. Sem câmera disponível, a prática usa o mesmo reconhecimento simulado das outras páginas.</p>
+    </div>
+    <div class="grid grid-2">
+      <div class="panel panel-pad">
+        <div class="eyebrow" style="margin-bottom:12px;">Letras · ${state.lang==='libras'?'Libras':'KSL'}</div>
+        <div class="alpha-grid" style="max-height:230px;overflow:auto;">
+          ${alphaOptions.map(l=>`<button class="sign-tile" style="padding:9px 4px;" onclick="learnShow('${l}', 'letra')"><div class="sign-letter" style="font-size:calc(14px * var(--fs-scale));">${l}</div></button>`).join('')}
+        </div>
+        ${wordOptions.length ? `<div class="eyebrow" style="margin:20px 0 12px;">Palavras com sinal específico</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">${wordOptions.map(w=>`<button class="badge" style="cursor:pointer;padding:7px 12px;font-size:calc(12px * var(--fs-scale));" onclick="learnShow('${w}','palavra')">${w}</button>`).join('')}</div>` : ''}
+      </div>
+      <div class="panel panel-pad" id="learnDetail">
+        <div class="empty" style="padding:60px 20px;">
+          <div style="margin-bottom:10px;">${ICON_HAND}</div>
+          Selecione uma letra ou palavra para ver a explicação completa.
+        </div>
+      </div>
+    </div>
+  `;
+}
+function learnShow(item, type){
+  const box = $id('learnDetail');
+  if(!box) return;
+  let name, desc;
+  if(type==='letra'){
+    if(state.lang==='libras'){ name = item; desc = LIBRAS_MAP[item] || 'Configuração de mão referente à letra, conforme alfabeto manual de Libras.'; }
+    else { name = item; desc = `Configuração de mão do alfabeto manual coreano (KSL) correspondente ao jamo "${item}". Forma detalhada baseada em material de referência oficial.`; }
+  } else {
+    name = item; desc = WORD_SIGNS_LIBRAS[item];
+  }
+  box.innerHTML = `
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:18px;">
+      <div class="sign-icon" style="width:64px;height:64px;">${ICON_HAND}</div>
+      <div>
+        <div class="badge">${type==='letra'?'Letra':'Palavra'} · ${state.lang==='libras'?'Libras':'KSL'}</div>
+        <h2 style="font-size:calc(24px * var(--fs-scale));margin-top:6px;">${name}</h2>
+      </div>
+    </div>
+    <div class="eyebrow" style="margin-bottom:8px;">Explicação</div>
+    <p style="color:var(--text-2);font-size:calc(13.5px * var(--fs-scale));line-height:1.6;">${desc}</p>
+    <div class="eyebrow" style="margin:18px 0 8px;">Como utilizar</div>
+    <p style="color:var(--text-2);font-size:calc(13.5px * var(--fs-scale));line-height:1.6;">Use esta configuração de mão ao soletrar ou compor sinais nas páginas <a href="#/texto-sinais" style="color:var(--accent-2);">Texto → Sinais</a> e <a href="#/sinais-texto" style="color:var(--accent-2);">Sinais → Texto</a>.</p>
+    <button class="btn btn-primary" style="margin-top:18px;" onclick="learnPractice('${name}')">Praticar (reconhecimento simulado)</button>
+    <div id="learnPracticeArea" style="margin-top:18px;"></div>
+  `;
+}
+function learnPractice(name){
+  const area = $id('learnPracticeArea');
+  if(!area) return;
+  area.innerHTML = `<div class="recog-stage" style="padding:26px;min-height:auto;">
+    <div class="recog-status"><span class="dot-pulse"></span> Analisando sinal...</div>
+  </div>`;
+  setTimeout(()=>{
+    if(!document.body.contains(area)) return;
+    area.innerHTML = `<div class="recog-stage" style="padding:26px;min-height:auto;">
+      <div class="recog-status" style="color:var(--success)">✓ Sinal reconhecido</div>
+      <div class="sign-letter" style="font-size:calc(26px * var(--fs-scale));margin-top:10px;">${name}</div>
+      <div class="confidence">${92+Math.floor(Math.random()*7)}% de confiança</div>
+    </div>`;
+    bumpStat('signsLearned', 0.2|0);
+  }, 1000);
+}
+
+/* ============================================================
+   PAGE: ALFABETO
+   ============================================================ */
+function renderAlphabet(){
+  const app = $id('app');
+  if(!app) return;
+  app.innerHTML = `
+    <div class="page-head">
+      <h1>Alfabeto</h1>
+      <p>Explore os dois alfabetos manuais disponíveis no protótipo. Libras e KSL são línguas distintas — os sinais não são traduzidos diretamente entre elas.</p>
+    </div>
+    <div class="tabs" style="margin-bottom:22px;">
+      <button class="tab ${state.lang==='libras'?'active':''}" onclick="setLang('libras'); renderAlphabet();">🇧🇷 Libras</button>
+      <button class="tab ${state.lang==='ksl'?'active':''}" onclick="setLang('ksl'); renderAlphabet();">🇰🇷 KSL</button>
+    </div>
+    <div id="alphaContent"></div>
+  `;
+  const content = $id('alphaContent');
+  if(!content) return;
+  if(state.lang==='libras'){
+    content.innerHTML = `<div class="panel panel-pad">
+      <div class="alpha-grid">
+        ${LIBRAS_ALPHABET.map(([l,d])=>`
+          <button class="sign-tile" onclick='openLetterModal(${JSON.stringify(l)}, ${JSON.stringify(d)}, "Libras")'>
+            <div class="sign-icon">${ICON_HAND}</div>
+            <div class="sign-letter">${l}</div>
+          </button>`).join('')}
+      </div>
+    </div>`;
+  } else {
+    content.innerHTML = `
+    <div class="panel panel-pad" style="margin-bottom:16px;">
+      <div class="eyebrow" style="margin-bottom:12px;">자음 · Consoantes</div>
+      <div class="alpha-grid" style="grid-template-columns:repeat(auto-fill, minmax(46px,1fr));">
+        ${KSL_CONSONANTS.map(c=>`<button class="sign-tile" onclick='openLetterModal(${JSON.stringify(c)}, "Configuração de mão do alfabeto manual coreano (KSL), referente a este jamo.", "KSL")'>
+          <div class="sign-icon">${ICON_HAND}</div><div class="sign-letter">${c}</div>
+        </button>`).join('')}
+      </div>
+    </div>
+    <div class="panel panel-pad">
+      <div class="eyebrow" style="margin-bottom:12px;">모음 · Vogais</div>
+      <div class="alpha-grid" style="grid-template-columns:repeat(auto-fill, minmax(56px,1fr));">
+        ${KSL_VOWELS.map(v=>`<button class="sign-tile" onclick='openLetterModal(${JSON.stringify(v)}, "Configuração de mão do alfabeto manual coreano (KSL), referente a este jamo.", "KSL")'>
+          <div class="sign-icon">${ICON_HAND}</div><div class="sign-letter">${v}</div>
+        </button>`).join('')}
+      </div>
+      <div class="hint">Vogais e consoantes compostas adicionais seguem a mesma referência do alfabeto manual coreano e serão expandidas no banco de dados do protótipo.</div>
+    </div>`;
+  }
+}
+function openLetterModal(letter, desc, lang){
+  const root = $id('modalRoot');
+  if(!root) return;
+  root.innerHTML = `
+  <div class="modal-backdrop" onclick="if(event.target===this) closeModal()">
+    <div class="modal fade-in">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div class="sign-icon" style="width:70px;height:70px;">${ICON_HAND}</div>
+        <button class="icon-btn" onclick="closeModal()" aria-label="Fechar">✕</button>
+      </div>
+      <div class="badge" style="margin-top:16px;">${lang}</div>
+      <h2 style="font-size:calc(32px * var(--fs-scale));margin-top:8px;">${letter}</h2>
+      <p style="color:var(--text-2);font-size:calc(13.5px * var(--fs-scale));margin-top:10px;line-height:1.6;">${desc}</p>
+      <div style="display:flex;gap:10px;margin-top:22px;">
+        <button class="btn btn-primary" onclick="closeModal(); learnShow('${letter}','letra'); location.hash='#/aprender';">Aprender</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Fechar</button>
+      </div>
+    </div>
+  </div>`;
+}
+function closeModal(){ withEl('modalRoot', el=>{ el.innerHTML=''; }); }
+
+/* ============================================================
+   PAGE: HISTÓRICO
+   ============================================================ */
+function renderHistory(){
+  const app = $id('app');
+  if(!app) return;
+  const hist = getHistory();
+  app.innerHTML = `
+    <div class="page-head">
+      <h1>Histórico</h1>
+      <p>Palavras e frases salvas neste dispositivo (armazenamento local).</p>
+    </div>
+    <div class="panel panel-pad">
+      ${hist.length===0 ? `<div class="empty">Nenhum item salvo ainda. Use "Salvar" em Texto → Sinais ou Sinais → Texto.</div>` :
+      hist.map(h=>`
+        <div class="hist-item">
+          <div>
+            <div class="hist-word">${h.text}</div>
+            <div class="hist-meta">${h.lang==='libras'?'🇧🇷 Libras':'🇰🇷 KSL'} · ${h.type} · ${h.date}</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-ghost btn-sm" onclick="reopenHistory('${encodeURIComponent(h.text)}')">Abrir</button>
+            <button class="btn btn-ghost btn-sm" onclick="deleteHistoryItem(${h.id})">Apagar</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+function reopenHistory(text){
+  location.hash = '#/texto-sinais';
+  setTimeout(()=>{
+    const input = $id('ttsInput');
+    if(input){ input.value = decodeURIComponent(text); ttsRun(); }
+  }, 60);
+}
+
+/* ============================================================
+   PAGE: ESTATÍSTICAS
+   ============================================================ */
+function renderStats(){
+  const s = getStats();
+  const app = $id('app');
+  if(!app) return;
+  const bars = [40,65,50,80,55,90,70];
+  app.innerHTML = `
+    <div class="page-head">
+      <h1>Estatísticas</h1>
+      <p>Acompanhe seu progresso no ConnectLibras.</p>
+    </div>
+    <div class="grid grid-4" style="margin-bottom:20px;">
+      <div class="panel panel-pad"><div class="stat-num">${s.signsRecognized}</div><div class="stat-label">Sinais reconhecidos</div></div>
+      <div class="panel panel-pad"><div class="stat-num">${s.wordsPracticed}</div><div class="stat-label">Palavras</div></div>
+      <div class="panel panel-pad"><div class="stat-num">${s.phrasesPracticed}</div><div class="stat-label">Frases</div></div>
+      <div class="panel panel-pad"><div class="stat-num">${s.accuracy}%</div><div class="stat-label">Precisão média</div></div>
+    </div>
+    <div class="panel panel-pad" style="margin-bottom:20px;">
+      <div class="eyebrow" style="margin-bottom:16px;">Atividade — últimos 7 dias</div>
+      <div style="display:flex;align-items:flex-end;gap:10px;height:120px;">
+        ${bars.map(h=>`<div style="flex:1;height:${h}%;background:linear-gradient(180deg,var(--accent),var(--accent-dim));border-radius:6px 6px 2px 2px;"></div>`).join('')}
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;">
+        ${['S','T','Q','Q','S','S','D'].map(d=>`<span style="flex:1;text-align:center;font-size:calc(11px * var(--fs-scale));color:var(--text-3);">${d}</span>`).join('')}
+      </div>
+    </div>
+    <div class="panel panel-pad">
+      <div class="eyebrow" style="margin-bottom:12px;">Sequência &amp; nível</div>
+      <div style="display:flex;align-items:center;gap:22px;">
+        <div>
+          <div class="stat-num">${s.streak} dias</div>
+          <div class="stat-label">Sequência atual</div>
+        </div>
+        <div style="flex:1;">
+          <div style="display:flex;justify-content:space-between;font-size:calc(12px * var(--fs-scale));color:var(--text-2);margin-bottom:6px;"><span>Nível ${s.level}</span><span>${s.xp % 1000}/1000 XP</span></div>
+          <div class="progress-track"><div class="progress-fill" style="width:${(s.xp%1000)/10}%"></div></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ============================================================
+   PAGE: SETTINGS / ACESSIBILIDADE
+   ============================================================ */
+function renderSettings(){
+  const app = $id('app');
+  if(!app) return;
+  const a = state.a11y;
+  app.innerHTML = `
+    <div class="page-head">
+      <h1>Configurações</h1>
+      <p>Idioma padrão, tema visual e recursos de acessibilidade — tudo salvo neste dispositivo.</p>
+    </div>
+
+    <div class="grid grid-2" style="align-items:start;">
+      <div class="panel panel-pad" style="margin-bottom:20px;">
+        <div class="section-title"><span class="eyebrow">Preferências</span></div>
+        <div class="a11y-row">
+          <div class="a11y-row-text"><div class="t">Idioma de sinais padrão</div><div class="d">Usado em todas as páginas do aplicativo</div></div>
+          <div class="lang-switch">
+            <button class="lang-btn ${state.lang==='libras'?'active':''}" onclick="setLang('libras'); renderSettings();">Libras</button>
+            <button class="lang-btn ${state.lang==='ksl'?'active':''}" onclick="setLang('ksl'); renderSettings();">KSL</button>
+          </div>
+        </div>
+        <div class="a11y-row">
+          <div class="a11y-row-text"><div class="t">Tema</div><div class="d">Modo escuro é o padrão do ConnectLibras</div></div>
+          <div class="lang-switch">
+            <button class="lang-btn ${state.theme==='dark'?'active':''}" onclick="state.theme='dark'; LS.set('cl_theme','dark'); renderSettings();">Escuro</button>
+            <button class="lang-btn ${state.theme==='light'?'active':''}" onclick="state.theme='light'; LS.set('cl_theme','light'); renderSettings();">Claro</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel panel-pad" style="margin-bottom:20px;">
+        <div class="section-title"><span class="eyebrow">Acessibilidade</span></div>
+        <div class="a11y-row">
+          <div class="a11y-row-text"><div class="t">Tamanho da fonte</div><div class="d">Ajusta o texto em todo o aplicativo</div></div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-ghost btn-sm" onclick="setFontScale(${(a.fontSize-0.1).toFixed(1)})">A-</button>
+            <button class="btn btn-ghost btn-sm" onclick="setFontScale(1)">A</button>
+            <button class="btn btn-ghost btn-sm" onclick="setFontScale(${(a.fontSize+0.1).toFixed(1)})">A+</button>
+          </div>
+        </div>
+        <div class="a11y-row">
+          <div class="a11y-row-text"><div class="t">Alto contraste</div><div class="d">Aumenta o contraste de bordas e textos</div></div>
+          <label class="switch"><input type="checkbox" ${a.highContrast?'checked':''} onchange="toggleA11y('highContrast')"><span class="track"><span class="thumb"></span></span></label>
+        </div>
+        <div class="a11y-row">
+          <div class="a11y-row-text"><div class="t">Reduzir animações</div><div class="d">Diminui transições e movimento na interface</div></div>
+          <label class="switch"><input type="checkbox" ${a.reduceMotion?'checked':''} onchange="toggleA11y('reduceMotion')"><span class="track"><span class="thumb"></span></span></label>
+        </div>
+        <div class="a11y-row">
+          <div class="a11y-row-text"><div class="t">Navegação por teclado</div><div class="d">Todos os elementos possuem foco visível (Tab)</div></div>
+          <span class="badge on">Sempre ativo</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel panel-pad">
+      <div class="section-title"><span class="eyebrow">Sobre este protótipo</span></div>
+      <p style="color:var(--text-2);font-size:calc(13.5px * var(--fs-scale));line-height:1.7;max-width:640px;">
+        O ConnectLibras é um protótipo de acessibilidade e comunicação em Línguas de Sinais. Nesta versão, o reconhecimento de sinais é simulado inteiramente pela interface — nenhuma câmera, sensor, luva ou Bluetooth é utilizado. A luva inteligente é apenas uma possibilidade futura do projeto.
+      </p>
+    </div>
+  `;
+}
+function setFontScale(v){
+  v = Math.max(0.85, Math.min(1.3, v));
+  state.a11y.fontSize = v; LS.set('cl_a11y', state.a11y); applyTheme(); renderSettings();
+}
+function toggleA11y(key){
+  state.a11y[key] = !state.a11y[key]; LS.set('cl_a11y', state.a11y); applyTheme(); renderSettings();
+}
+
+/* ---------- INIT (protegido contra falhas em Safari/iOS) ---------- */
+function showFatalError(err){
+  try{
+    const app = document.getElementById('app');
+    if(app){
+      app.innerHTML = `
+        <div class="panel panel-pad" style="max-width:520px;margin:60px auto;text-align:center;">
+          <div style="font-size:15px;font-weight:700;margin-bottom:8px;">Não foi possível carregar o ConnectLibras</div>
+          <div style="color:var(--text-2);font-size:13px;line-height:1.6;">
+            Isso costuma acontecer quando o arquivo é aberto em um modo de pré-visualização
+            (Arquivos, Mail, AirDrop) que desativa JavaScript, em vez do Safari completo.
+            Tente abrir o arquivo diretamente pelo Safari (ícone de compartilhar → "Abrir no Safari")
+            ou hospedá-lo em um servidor local.
+          </div>
+          <div style="margin-top:14px;font-family:var(--font-mono);font-size:11px;color:var(--text-3);word-break:break-word;">${(err && (err.message||err)) || 'Erro desconhecido'}</div>
+        </div>`;
+    }
+    const menuBtn = document.getElementById('menuBtn');
+    if(menuBtn) menuBtn.style.display = 'none';
+  }catch(e2){ /* nada mais a fazer */ }
+}
+
+function initApp(){
+  try{
+    applyTheme();
+    render();
+    const syncMenuBtn = ()=>{
+      const btn = document.getElementById('menuBtn');
+      if(btn) btn.style.display = window.innerWidth<=880 ? 'flex' : 'none';
+    };
+    window.addEventListener('resize', syncMenuBtn);
+    syncMenuBtn();
+    window.__connectLibrasReady = true;
+  }catch(err){
+    showFatalError(err);
+  }
+}
+window.addEventListener('error', function(e){
+  // Só substitui a tela inteira se o app ainda não tiver iniciado com sucesso.
+  // Erros que acontecem depois (ex: durante uma interação) apenas vão pro console,
+  // para não apagar a tela por causa de um problema pontual.
+  if(!window.__connectLibrasReady){ showFatalError(e.error || e.message); }
+  else { console.error('ConnectLibras runtime error:', e.error || e.message); }
+});
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
+</script>
+</body>
+</html>
