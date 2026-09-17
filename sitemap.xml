@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ConnectLibras — sitemap.xml
+
+  ATENÇÃO: substitua "https://SEU-DOMINIO-AQUI" pela URL pública real
+  depois que o site estiver hospedado (ex: no GitHub Pages, Vercel, Netlify
+  ou outro serviço). Sem uma URL pública real, este sitemap é apenas um
+  modelo pronto para ser preenchido — não o envie ao Google Search Console
+  antes de trocar o domínio de exemplo.
+
+  Como o ConnectLibras hoje é um app de página única (SPA) com navegação
+  por hash (#/home, #/alfabeto etc.), os mecanismos de busca só indexam a
+  URL raiz — os "#/..." não são rotas de servidor separadas. Por isso o
+  sitemap lista apenas a página inicial.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://SEU-DOMINIO-AQUI/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>
